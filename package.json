@@ -1,0 +1,17 @@
+{
+  "name": "opencode-qwen-web",
+  "version": "0.1.0",
+  "description": "Magpie/OpenCode plugin: chat.qwen.ai via Chrome Default cookies",
+  "type": "module",
+  "main": "./index.ts",
+  "files": ["index.ts", "src", "README.md"],
+  "keywords": ["opencode", "opencode-plugin", "magpie", "qwen", "qwen-web"],
+  "license": "MIT",
+  "magpie": {
+    "name": "Qwen Web",
+    "summary": {
+      "en": "Use chat.qwen.ai through your Chrome Default login (no API key)."
+    },
+    "maxConcurrency": 2
+  }
+}

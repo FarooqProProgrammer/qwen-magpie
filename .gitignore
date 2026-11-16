@@ -1,0 +1,7 @@
+node_modules/
+_ref/
+*.log
+.DS_Store
+.env
+.cookie*
+cookies*.txt
