@@ -96,18 +96,24 @@ export const QwenWebPlugin = async () => ({
         },
       },
       {
+        // Magpie only passes the paste into authorize when `prompts` are set.
+        // Without prompts, inputs is undefined and the key field never reaches us.
         type: "api",
-        label: "Paste cookies (JSON or Cookie header)",
-        placeholder: '[{ "name":"token","value":"…" }]  or  token=…; refresh_token=…',
-        async authorize(inputs: string | { key?: string; apiKey?: string } | undefined) {
-          const raw = String(
-            typeof inputs === "string" ? inputs : inputs?.key || inputs?.apiKey || "",
-          ).trim()
+        label: "Paste Qwen cookies",
+        prompts: [
+          {
+            type: "text",
+            key: "cookies",
+            message: "Cookie Editor JSON or Cookie header (needs token or refresh_token)",
+            placeholder: '[{"name":"refresh_token","value":"eyJ…"}, …]',
+          },
+        ],
+        async authorize(inputs: { cookies?: string; key?: string } | undefined) {
+          const raw = String(inputs?.cookies || inputs?.key || "").trim()
           if (!raw) {
             return {
               type: "failed" as const,
-              error:
-                "Paste Cookie Editor JSON for .qwen.ai / chat.qwen.ai, or a raw Cookie header. token or refresh_token required.",
+              error: "Paste was empty. Paste the full Cookie Editor JSON array, then Sign in.",
             }
           }
           try {

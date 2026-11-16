@@ -1,6 +1,6 @@
 {
   "name": "opencode-qwen-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Magpie/OpenCode plugin: chat.qwen.ai via Chrome Default cookies",
   "type": "module",
   "main": "./index.ts",
