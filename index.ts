@@ -1,5 +1,6 @@
 import { handleOpenAICompatFetch } from "./src/bridge.ts"
 import { readChromeQwenSession } from "./src/chrome-cookies.ts"
+import { authFromCookiePaste } from "./src/session.ts"
 import { DEFAULT_MODELS, fetchQwenModels, validateQwenSession, type QwenAuth } from "./src/qwen.ts"
 
 const PROVIDER = "qwen-web"
@@ -96,38 +97,34 @@ export const QwenWebPlugin = async () => ({
       },
       {
         type: "api",
-        label: "Paste chat.qwen.ai Cookie header",
-        placeholder: "token=eyJ…; other=…",
+        label: "Paste cookies (JSON or Cookie header)",
+        placeholder: '[{ "name":"token","value":"…" }]  or  token=…; refresh_token=…',
         async authorize(inputs: string | { key?: string; apiKey?: string } | undefined) {
           const raw = String(
             typeof inputs === "string" ? inputs : inputs?.key || inputs?.apiKey || "",
           ).trim()
           if (!raw) {
-            return { type: "failed" as const, error: "Paste the full Cookie header from DevTools → Network → chat.qwen.ai request." }
-          }
-          const tokenMatch = /(?:^|;\s*)token=([^;]+)/i.exec(raw)
-          const token = tokenMatch?.[1]?.trim() || (raw.startsWith("eyJ") ? raw : "")
-          if (!token) {
-            return { type: "failed" as const, error: "Cookie must include token=… (JWT) or be a raw JWT." }
-          }
-          const cookieHeader = raw.includes("token=") ? raw : `token=${token}`
-          const check = await validateQwenSession({ token, cookieHeader })
-          if (!check.ok) return { type: "failed" as const, error: check.error.slice(0, 500) }
-          let email: string | undefined
-          try {
-            const payload = token.split(".")[1]
-            if (payload) {
-              const json = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { email?: string }
-              email = json.email
+            return {
+              type: "failed" as const,
+              error:
+                "Paste Cookie Editor JSON for .qwen.ai / chat.qwen.ai, or a raw Cookie header. token or refresh_token required.",
             }
-          } catch {
-            /* ignore */
           }
-          return {
-            type: "success" as const,
-            key: token,
-            metadata: { cookies: cookieHeader, email },
-            accountId: email || "pasted-cookie",
+          try {
+            const session = await authFromCookiePaste(raw)
+            const check = await validateQwenSession(session)
+            if (!check.ok) return { type: "failed" as const, error: check.error.slice(0, 500) }
+            return {
+              type: "success" as const,
+              key: session.token,
+              metadata: { cookies: session.cookieHeader, email: session.email },
+              accountId: session.email || "pasted-cookie",
+            }
+          } catch (e) {
+            return {
+              type: "failed" as const,
+              error: (e instanceof Error ? e.message : String(e)).slice(0, 500),
+            }
           }
         },
       },
@@ -168,6 +165,7 @@ export const QwenWebPlugin = async () => ({
 export const _internal = {
   readChromeQwenSession,
   validateQwenSession,
+  authFromCookiePaste,
   DEFAULT_MODELS,
   PROVIDER,
 }

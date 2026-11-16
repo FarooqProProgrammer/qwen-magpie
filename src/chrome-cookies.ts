@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileS
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Database } from "bun:sqlite"
+import { resolveTokenFromCookies } from "./session.ts"
 
 const QWEN_HOST_LIKE = "%qwen.ai%"
 
@@ -249,19 +250,18 @@ export async function readChromeQwenSession(
         if (val) jar.set(row.name, val)
       }
 
-      const token = jar.get("token")
-      if (!token) {
+      if (!jar.has("token") && !jar.has("refresh_token")) {
         throw new Error(
-          "No token cookie for *.qwen.ai in Chrome Default. Log into https://chat.qwen.ai in Chrome, then close Chrome and try again.",
+          "No token/refresh_token for *.qwen.ai in Chrome Default. Log into https://chat.qwen.ai, then close Chrome and try again.",
         )
       }
 
-      // Prefer a full jar; always ensure token is present
       const cookieHeader = [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ")
+      const resolved = await resolveTokenFromCookies(cookieHeader, jar)
       return {
-        token,
-        cookieHeader,
-        email: emailFromJwt(token),
+        token: resolved.token,
+        cookieHeader: resolved.cookieHeader,
+        email: resolved.email || emailFromJwt(resolved.token),
         profilePath,
       }
     } finally {

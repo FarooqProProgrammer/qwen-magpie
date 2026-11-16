@@ -8,7 +8,14 @@ Magpie / OpenCode plugin that uses your **Chrome Default** `chat.qwen.ai` login 
 2. Fully quit Chrome (including tray) — Windows locks `Cookies` while Chrome is running. Magpie may also try a Volume Shadow Copy while Chrome is open (sometimes needs admin).
 3. Add the plugin folder:
 
-If Chrome stays open / sign-in fails: Cancel → login again → **Paste chat.qwen.ai Cookie header** (DevTools → Network → any `chat.qwen.ai` request → Cookie).
+If Chrome stays open / sign-in fails: Cancel → login again → **Paste cookies (JSON or Cookie header)**.
+
+Supported paste formats:
+- Cookie Editor JSON array (your export)
+- Raw `Cookie` header string
+- Bare JWT
+
+If the export has `refresh_token` but no `token`, the plugin calls `/api/v1/auths/` to mint one.
 
 ```bash
 magpie plugin add C:\Users\Farooq\Documents\product\qwen-web
